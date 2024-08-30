@@ -1,122 +1,245 @@
-(function(){
-	// FAQ Template - by CodyHouse.co
-  var FaqTemplate = function(element) {
-		this.element = element;
-		this.sections = this.element.getElementsByClassName('cd-faq__group');
-		this.triggers = this.element.getElementsByClassName('cd-faq__trigger');
-		this.faqContainer = this.element.getElementsByClassName('cd-faq__items')[0];
-		this.faqsCategoriesContainer = this.element.getElementsByClassName('cd-faq__categories')[0];
-		this.faqsCategories = this.faqsCategoriesContainer.getElementsByClassName('cd-faq__category');
-  	this.faqOverlay = this.element.getElementsByClassName('cd-faq__overlay')[0];
-  	this.faqClose = this.element.getElementsByClassName('cd-faq__close-panel')[0];
-  	this.scrolling = false;
-  	initFaqEvents(this);
-  };
+/**
+* Template Name: Ninestars
+* Updated: Jan 09 2024 with Bootstrap v5.3.2
+* Template URL: https://bootstrapmade.com/ninestars-free-bootstrap-3-theme-for-creative/
+* Author: BootstrapMade.com
+* License: https://bootstrapmade.com/license/
+*/
+(function() {
+  "use strict";
 
-  function initFaqEvents(faqs) {
-  	// click on a faq category
-		faqs.faqsCategoriesContainer.addEventListener('click', function(event){
-			var category = event.target.closest('.cd-faq__category');
-			if(!category) return;
-			var mq = getMq(faqs),
-				selectedCategory = category.getAttribute('href').replace('#', '');
-			if(mq == 'mobile') { // on mobile, open faq panel
-				event.preventDefault();
-				faqs.faqContainer.scrollTop = 0;
-				Util.addClass(faqs.faqContainer, 'cd-faq__items--slide-in');
-				Util.addClass(faqs.faqClose, 'cd-faq__close-panel--move-left');
-				Util.addClass(faqs.faqOverlay, 'cd-faq__overlay--is-visible');
-				var selectedSection = faqs.faqContainer.getElementsByClassName('cd-faq__group--selected');
-				if(selectedSection.length > 0) {
-					Util.removeClass(selectedSection[0], 'cd-faq__group--selected');
-				}
-				Util.addClass(document.getElementById(selectedCategory), 'cd-faq__group--selected');
-			} else { // on desktop, scroll to section
-				if(!window.requestAnimationFrame) return;
-				event.preventDefault();
-				var windowScrollTop = window.scrollY || document.documentElement.scrollTop;
-				Util.scrollTo(document.getElementById(selectedCategory).getBoundingClientRect().top + windowScrollTop + 2, 200);
-			}
-		});
+  /**
+   * Easy selector helper function
+   */
+  const select = (el, all = false) => {
+    el = el.trim()
+    if (all) {
+      return [...document.querySelectorAll(el)]
+    } else {
+      return document.querySelector(el)
+    }
+  }
 
-		// on mobile -> close faq panel
-		faqs.faqOverlay.addEventListener('click', function(event){
-			closeFaqPanel(faqs);
-		});
-		faqs.faqClose.addEventListener('click', function(event){
-			event.preventDefault();
-			closeFaqPanel(faqs);
-		});
+  /**
+   * Easy event listener function
+   */
+  const on = (type, el, listener, all = false) => {
+    let selectEl = select(el, all)
+    if (selectEl) {
+      if (all) {
+        selectEl.forEach(e => e.addEventListener(type, listener))
+      } else {
+        selectEl.addEventListener(type, listener)
+      }
+    }
+  }
 
-		// on desktop -> toggle faq content visibility when clicking on the trigger element
-		faqs.faqContainer.addEventListener('click', function(event){
-			if(getMq(faqs) != 'desktop') return;
-			var trigger = event.target.closest('.cd-faq__trigger');
-			if(!trigger) return;
-			event.preventDefault();
-			var content = trigger.nextElementSibling,
-				parent = trigger.closest('li'),
-				bool = Util.hasClass(parent, 'cd-faq__item-visible');
+  /**
+   * Easy on scroll event listener 
+   */
+  const onscroll = (el, listener) => {
+    el.addEventListener('scroll', listener)
+  }
 
-			Util.toggleClass(parent, 'cd-faq__item-visible', !bool);
+  /**
+   * Navbar links active state on scroll
+   */
+  let navbarlinks = select('#navbar .scrollto', true)
+  const navbarlinksActive = () => {
+    let position = window.scrollY + 200
+    navbarlinks.forEach(navbarlink => {
+      if (!navbarlink.hash) return
+      let section = select(navbarlink.hash)
+      if (!section) return
+      if (position >= section.offsetTop && position <= (section.offsetTop + section.offsetHeight)) {
+        navbarlink.classList.add('active')
+      } else {
+        navbarlink.classList.remove('active')
+      }
+    })
+  }
+  window.addEventListener('load', navbarlinksActive)
+  onscroll(document, navbarlinksActive)
 
-			//store initial and final height - animate faq content height
-			Util.addClass(content, 'cd-faq__content--visible');
-			var initHeight = bool ? content.offsetHeight: 0,
-				finalHeight = bool ? 0 : content.offsetHeight;
-			
-			if(window.requestAnimationFrame) {
-				Util.setHeight(initHeight, finalHeight, content, 200, function(){
-					heighAnimationCb(content, bool);
-				});
-			} else {
-				heighAnimationCb(content, bool);
-			}
-		});
-		
-		if(window.requestAnimationFrame) {
-			// on scroll -> update selected category
-			window.addEventListener('scroll', function(){
-				if(getMq(faqs) != 'desktop' || faqs.scrolling) return;
-				faqs.scrolling = true;
-				window.requestAnimationFrame(updateCategory.bind(faqs)); 
-			});
-		}
-  };
+  /**
+   * Scrolls to an element with header offset
+   */
+  const scrollto = (el) => {
+    let header = select('#header')
+    let offset = header.offsetHeight
 
-  function closeFaqPanel(faqs) {
-  	Util.removeClass(faqs.faqContainer, 'cd-faq__items--slide-in');
-  	Util.removeClass(faqs.faqClose, 'cd-faq__close-panel--move-left');
-  	Util.removeClass(faqs.faqOverlay, 'cd-faq__overlay--is-visible');
-  };
+    let elementPos = select(el).offsetTop
+    window.scrollTo({
+      top: elementPos - offset,
+      behavior: 'smooth'
+    })
+  }
 
-  function getMq(faqs) {
-		//get MQ value ('desktop' or 'mobile') 
-		return window.getComputedStyle(faqs.element, '::before').getPropertyValue('content').replace(/'|"/g, "");
-  };
+  /**
+   * Back to top button
+   */
+  let backtotop = select('.back-to-top')
+  if (backtotop) {
+    const toggleBacktotop = () => {
+      if (window.scrollY > 100) {
+        backtotop.classList.add('active')
+      } else {
+        backtotop.classList.remove('active')
+      }
+    }
+    window.addEventListener('load', toggleBacktotop)
+    onscroll(document, toggleBacktotop)
+  }
 
-  function updateCategory() { // update selected category -> show green rectangle to the left of the category
-  	var selected = false;
-		for(var i = 0; i < this.sections.length; i++) {
-			var top = this.sections[i].getBoundingClientRect().top,
-				bool = (top <= 0) && (-1*top < this.sections[i].offsetHeight);
-			Util.toggleClass(this.faqsCategories[i], 'cd-faq__category-selected', bool);
-			if(bool) selected = true;
-		}
-		if(!selected) Util.addClass(this.faqsCategories[0], 'cd-faq__category-selected');
-		this.scrolling = false;
-  };
+  /**
+   * Mobile nav toggle
+   */
+  on('click', '.mobile-nav-toggle', function(e) {
+    select('#navbar').classList.toggle('navbar-mobile')
+    this.classList.toggle('bi-list')
+    this.classList.toggle('bi-x')
+  })
 
-  function heighAnimationCb(content, bool) {
-		content.removeAttribute("style");
-		if(bool) Util.removeClass(content, 'cd-faq__content--visible');
-  };
+  /**
+   * Mobile nav dropdowns activate
+   */
+  on('click', '.navbar .dropdown > a', function(e) {
+    if (select('#navbar').classList.contains('navbar-mobile')) {
+      e.preventDefault()
+      this.nextElementSibling.classList.toggle('dropdown-active')
+    }
+  }, true)
 
-  var faqTemplate = document.getElementsByClassName('js-cd-faq'),
-  	faqArray = [];
-  if(faqTemplate.length > 0) {
-		for(var i = 0; i < faqTemplate.length; i++) {
-			faqArray.push(new FaqTemplate(faqTemplate[i])); 
-		}
-  };
-})();
+  /**
+   * Scrool with ofset on links with a class name .scrollto
+   */
+  on('click', '.scrollto', function(e) {
+    if (select(this.hash)) {
+      e.preventDefault()
+
+      let navbar = select('#navbar')
+      if (navbar.classList.contains('navbar-mobile')) {
+        navbar.classList.remove('navbar-mobile')
+        let navbarToggle = select('.mobile-nav-toggle')
+        navbarToggle.classList.toggle('bi-list')
+        navbarToggle.classList.toggle('bi-x')
+      }
+      scrollto(this.hash)
+    }
+  }, true)
+
+  /**
+   * Scroll with ofset on page load with hash links in the url
+   */
+  window.addEventListener('load', () => {
+    if (window.location.hash) {
+      if (select(window.location.hash)) {
+        scrollto(window.location.hash)
+      }
+    }
+  });
+
+  /**
+   * Porfolio isotope and filter
+   */
+  window.addEventListener('load', () => {
+    let portfolioContainer = select('.portfolio-container');
+    if (portfolioContainer) {
+      let portfolioIsotope = new Isotope(portfolioContainer, {
+        itemSelector: '.portfolio-item',
+        layoutMode: 'fitRows'
+      });
+
+      let portfolioFilters = select('#portfolio-flters li', true);
+
+      on('click', '#portfolio-flters li', function(e) {
+        e.preventDefault();
+        portfolioFilters.forEach(function(el) {
+          el.classList.remove('filter-active');
+        });
+        this.classList.add('filter-active');
+
+        portfolioIsotope.arrange({
+          filter: this.getAttribute('data-filter')
+        });
+        portfolioIsotope.on('arrangeComplete', function() {
+          AOS.refresh()
+        });
+      }, true);
+    }
+
+  });
+
+  /**
+   * Initiate portfolio lightbox 
+   */
+  const portfolioLightbox = GLightbox({
+    selector: '.portfolio-lightbox'
+  });
+
+  /**
+   * Portfolio details slider
+   */
+  new Swiper('.portfolio-details-slider', {
+    speed: 400,
+    loop: true,
+    autoplay: {
+      delay: 5000,
+      disableOnInteraction: false
+    },
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true
+    }
+  });
+
+  /**
+   * Clients Slider
+   */
+  new Swiper('.clients-slider', {
+    speed: 400,
+    loop: true,
+    autoplay: {
+      delay: 5000,
+      disableOnInteraction: false
+    },
+    slidesPerView: 'auto',
+    pagination: {
+      el: '.swiper-pagination',
+      type: 'bullets',
+      clickable: true
+    },
+    breakpoints: {
+      320: {
+        slidesPerView: 2,
+        spaceBetween: 40
+      },
+      480: {
+        slidesPerView: 3,
+        spaceBetween: 60
+      },
+      640: {
+        slidesPerView: 4,
+        spaceBetween: 80
+      },
+      992: {
+        slidesPerView: 6,
+        spaceBetween: 120
+      }
+    }
+  });
+
+  /**
+   * Animation on scroll
+   */
+  window.addEventListener('load', () => {
+    AOS.init({
+      duration: 1000,
+      easing: "ease-in-out",
+      once: true,
+      mirror: false
+    });
+  });
+
+})()
